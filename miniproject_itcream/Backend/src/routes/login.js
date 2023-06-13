@@ -1,54 +1,47 @@
-const mysql = require('mysql2');
+const mysql = require("mysql2");
 const bcrypt = require("bcrypt");
-var jwt = require("jsonwebtoken");
-// const { request } = require('express');
-const connection = require("../database")
+
 module.exports = (req, res) => {
-    const username = req.body.username;
-    const password = req.body.password;
-  
-    var sql = mysql.format("SELECT * FROM users WHERE username = ?", [username]);  
-    
-    connection.query(sql, async (err, rows) => {
-      if (err) {
-        return res.json({
-          success: false,
-          data: null,
-          error: err.message,
-        });
-      }
-  
-      numRows = rows.length;
-      if (numRows == 0) {
-        res.json({
-          success: false,
-          message: "User not found",
-        });
-      } else {
-          // console.log(password, rows[0].hashedPassword);
-        const valid = await bcrypt.compare(password, rows[0].hashedPassword);
-  
-        if (!valid) {  
-         return res.json({
-            success: false,
-            message: "Password is incorrect",
-          });
-        } 
-        const token = jwt.sign(
-          {
-            data: rows[0].user_id,
-          },
-          "stupidsecret",
-          { expiresIn: "1h" }
-        );
-        // console.log("login token");
-        // console.log(token);
-        res.cookie("jwt_token", token);
-        res.json({
-          success: true,
-          message: "Login success",
-          user: rows[0],
-        });      
-      }
-    });
-  };
+	const username = req.body.username;
+	const password = req.body.password;
+
+	var sql = mysql.format("SELECT * FROM users WHERE username = ?", [username]);
+	// console.log("DEBUG: /basic/login => " + sql);
+	connection.query(sql, (err, rows) => {
+		if (err) {
+			return res.json({
+				success: false,
+				data: null,
+				error: err.message,
+			});
+		}
+
+		numRows = rows.length;
+		if (numRows == 0) {
+			res.json({
+				success: false,
+				message: "Username not found in the system",
+			});
+		} else {
+      // res.json({
+			// 		success: true,
+			// 		message: "Login credential is correct",
+			// 		user: rows[0],
+			// 	});
+			const valid = bcrypt.compare(password, rows[0].hashed_password);
+
+			if (valid) {
+				res.json({
+					success: true,
+					message: "Login credential is correct",
+					user: rows[0],
+				});
+			} else {
+				res.json({
+					success: true,
+					message: "Login credential is incorrect",
+				});
+			}
+		}
+	});
+};
